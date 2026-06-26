@@ -1,76 +1,89 @@
 import { defineStore } from 'pinia';
-import axios from 'axios';
+import { ref } from 'vue';
 
-export const useAuthStore = defineStore('auth', {
-    state: () => ({
-        user: null,
-        token: localStorage.getItem('token') || null,
-        isAuthenticated: false
-    }),
-    actions: {
-        async loginUser(email, password) {
-            try {
-                const response = await axios.post('http://localhost:3000/api/auth/login', {
-                    email: email,
-                    password: password
-                });
+const API_URL = 'http://localhost:3000/api';
 
-                if (response.data && response.data.token) {
-                    this.token = response.data.token;
-                    this.user = response.data.user;
-                    this.isAuthenticated = true;
-                    localStorage.setItem('token', this.token);
-                    return true;
-                }
-                return false;
-            } catch (error) {
-                console.log('Error in loginUser:', error);
-                throw error;
-            }
-        },
-        async registerNewUser(name, email, password) {
-             try {
-                const response = await axios.post('http://localhost:3000/api/auth/register', {
-                    name: name,
-                    email: email,
-                    password: password
-                });
-
-                if (response.data && response.data.token) {
-                    this.token = response.data.token;
-                    this.user = response.data.user;
-                    this.isAuthenticated = true;
-                    localStorage.setItem('token', this.token);
-                    return true;
-                }
-                return false;
-             } catch(error) {
-                 console.log('Error in registerNewUser:', error);
-                 throw error;
-             }
-        },
-        logoutUser() {
-            this.user = null;
-            this.token = null;
-            this.isAuthenticated = false;
-            localStorage.removeItem('token');
-        },
-        async fetchCurrentUser() {
-             if (!this.token) {
-                 return;
-             }
-             try {
-                 const response = await axios.get('http://localhost:3000/api/auth/me', {
-                     headers: { Authorization: `Bearer ${this.token}` }
-                 });
-                 if (response.data && response.data.user) {
-                     this.user = response.data.user;
-                     this.isAuthenticated = true;
-                 }
-             } catch(error) {
-                 console.log('Error fetching current user:', error);
-                 this.logoutUser();
-             }
+export const useAuthStore = defineStore('auth', () => {
+    const user = ref(JSON.parse(localStorage.getItem('user')) || null);
+    const token = ref(localStorage.getItem('token') || null);
+    const isAuthenticated = ref(!!token.value);
+    
+    function setAuthenticationState(userData, authToken) {
+        user.value = userData;
+        token.value = authToken;
+        isAuthenticated.value = true;
+        
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('token', authToken);
+    }
+    
+    function logoutUser() {
+        user.value = null;
+        token.value = null;
+        isAuthenticated.value = false;
+        
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        
+        if (window.showAppToast) {
+            window.showAppToast('Sessão encerrada com sucesso.', 'info');
         }
     }
+
+    async function login(email, password) {
+        try {
+            console.log(`[authStore -> login] Tentando autenticar usuário: ${email}`);
+            
+            const response = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success === true) {
+                setAuthenticationState(data.user, data.token);
+                return { success: true };
+            } else {
+                return { success: false, errorMessage: data.errorMessage || 'Erro desconhecido ao fazer login.' };
+            }
+        } catch (error) {
+            console.error(`[authStore -> login] Erro de rede ou servidor:`, error);
+            return { success: false, errorMessage: 'Não foi possível conectar ao servidor. Verifique sua conexão.' };
+        }
+    }
+    
+    async function register(name, email, password) {
+        try {
+            console.log(`[authStore -> register] Registrando novo usuário: ${email}`);
+            
+            const response = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success === true) {
+                setAuthenticationState(data.user, data.token);
+                return { success: true };
+            } else {
+                return { success: false, errorMessage: data.errorMessage || 'Erro ao registrar usuário.' };
+            }
+        } catch (error) {
+            console.error(`[authStore -> register] Erro de rede ou servidor:`, error);
+            return { success: false, errorMessage: 'Não foi possível conectar ao servidor. Verifique sua conexão.' };
+        }
+    }
+
+    return {
+        user,
+        token,
+        isAuthenticated,
+        login,
+        register,
+        logoutUser
+    };
 });

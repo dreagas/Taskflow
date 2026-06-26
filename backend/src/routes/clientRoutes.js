@@ -1,16 +1,21 @@
 const express = require('express');
+const { 
+    createClient, 
+    getAllClients, 
+    getClientById, 
+    updateClient, 
+    deleteClient 
+} = require('../controllers/clientController');
+const { requireAuthentication } = require('../middlewares/authMiddleware');
+
 const router = express.Router();
-const clientController = require('../controllers/clientController');
-const authMiddleware = require('../middlewares/authMiddleware');
 
-// Protected routes
-router.use(authMiddleware.verifyTokenMiddleware);
+router.use(requireAuthentication); // Protect all client routes
 
-router.get('/dashboard-metrics', clientController.getDashboardMetrics);
-router.get('/', clientController.getAllClients);
-router.get('/:id', clientController.getClientById);
-router.post('/', clientController.createNewClient);
-router.put('/:id', clientController.updateExistingClient);
-router.delete('/:id', clientController.deleteClientRecord);
+router.post('/', createClient);
+router.get('/', getAllClients);
+router.get('/:id', getClientById);
+router.put('/:id', updateClient);
+router.delete('/:id', deleteClient);
 
 module.exports = router;

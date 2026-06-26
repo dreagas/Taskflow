@@ -1,359 +1,182 @@
-<template>
-    <div class="space-y-6">
-        <div class="sm:flex sm:items-center sm:justify-between">
-            <div>
-                <h2 class="text-2xl font-bold leading-7 text-slate-900 sm:text-3xl sm:truncate">
-                    Ordens de Serviço
-                </h2>
-                <p class="mt-1 text-sm text-slate-500">
-                    Gerenciamento de chamados e ordens ativas
-                </p>
-            </div>
-            <div class="mt-4 sm:mt-0">
-                <button @click="openModal()" class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-                    <PlusIcon class="-ml-1 mr-2 h-5 w-5" />
-                    Nova O.S.
-                </button>
-            </div>
-        </div>
-
-        <div class="glass-panel shadow-sm rounded-2xl overflow-hidden">
-             <!-- Filters -->
-             <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row gap-4">
-                  <div class="flex-1">
-                      <select v-model="filterStatus" class="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md transition-colors">
-                          <option value="">Todos os Status</option>
-                          <option value="Pendente">Pendente</option>
-                          <option value="Em Andamento">Em Andamento</option>
-                          <option value="Concluído">Concluído</option>
-                      </select>
-                  </div>
-                  <div class="flex-1">
-                      <select v-model="filterPriority" class="block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md transition-colors">
-                          <option value="">Todas as Prioridades</option>
-                          <option value="Baixa">Baixa</option>
-                          <option value="Média">Média</option>
-                          <option value="Alta">Alta</option>
-                      </select>
-                  </div>
-             </div>
-             
-             <div class="overflow-x-auto">
-                 <table class="min-w-full divide-y divide-slate-200">
-                     <thead class="bg-slate-50">
-                         <tr>
-                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ID</th>
-                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Cliente</th>
-                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Descrição</th>
-                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Datas</th>
-                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status & Prioridade</th>
-                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Valor Total</th>
-                             <th scope="col" class="relative px-6 py-3"><span class="sr-only">Ações</span></th>
-                         </tr>
-                     </thead>
-                     <tbody class="bg-white divide-y divide-slate-200">
-                         <tr v-for="order in processedOrders" :key="order.id" class="hover:bg-slate-50 transition-colors">
-                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                 #{{ order.id }}
-                             </td>
-                             <td class="px-6 py-4 whitespace-nowrap">
-                                 <div class="text-sm font-medium text-slate-900">{{ order.client_name || 'Desconhecido' }}</div>
-                             </td>
-                             <td class="px-6 py-4">
-                                 <div class="text-sm text-slate-900 line-clamp-2">{{ order.description }}</div>
-                             </td>
-                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                 <div v-if="order.start_date">Início: {{ formatDateBR(order.start_date) }}</div>
-                                 <div v-if="order.end_date">Fim: {{ formatDateBR(order.end_date) }}</div>
-                             </td>
-                             <td class="px-6 py-4 whitespace-nowrap space-y-2">
-                                 <div class="flex gap-2 flex-col items-start">
-                                     <StatusBadge :status="order.status" type="status" />
-                                     <StatusBadge :status="order.priority" type="priority" />
-                                 </div>
-                             </td>
-                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 font-medium">
-                                 {{ formatCurrency(order.total_amount) }}
-                             </td>
-                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                 <div class="relative inline-block text-left group">
-                                     <button type="button" class="inline-flex justify-center w-full rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                         Ações
-                                         <ChevronDownIcon class="-mr-1 ml-2 h-5 w-5" aria-hidden="true" />
-                                     </button>
-                                     <div class="origin-top-right absolute right-0 mt-2 w-32 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-slate-100 focus:outline-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ease-in-out z-10">
-                                         <div class="py-1">
-                                             <button @click="openModal(order)" class="group flex w-full items-center px-4 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                                 Editar
-                                             </button>
-                                         </div>
-                                         <div class="py-1">
-                                             <button @click="confirmDelete(order.id)" class="group flex w-full items-center px-4 py-2 text-sm text-rose-700 hover:bg-rose-50 hover:text-rose-900">
-                                                 Excluir
-                                             </button>
-                                         </div>
-                                     </div>
-                                 </div>
-                             </td>
-                         </tr>
-                         <tr v-if="processedOrders.length === 0">
-                              <td colspan="7" class="px-6 py-10 text-center text-sm text-slate-500">Nenhuma ordem de serviço encontrada.</td>
-                         </tr>
-                     </tbody>
-                 </table>
-             </div>
-        </div>
-
-        <!-- Modal -->
-        <div v-if="isModalOpen" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                
-                <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" aria-hidden="true" @click="closeModal"></div>
-                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-                <div class="inline-block align-bottom glass-panel rounded-2xl text-left overflow-hidden shadow-2xl shadow-indigo-500/10 transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-                    <form @submit.prevent="saveServiceOrder">
-                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                            <div class="sm:flex sm:items-start">
-                                <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                                    <h3 class="text-lg leading-6 font-medium text-slate-900" id="modal-title">
-                                        {{ currentOrder.id ? 'Editar Ordem de Serviço #' + currentOrder.id : 'Nova Ordem de Serviço' }}
-                                    </h3>
-                                    <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-                                        
-                                        <div class="sm:col-span-6">
-                                            <label class="block text-sm font-medium text-slate-700">Cliente <span class="text-rose-500">*</span></label>
-                                            <select v-model="currentOrder.client_id" required class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                                <option value="" disabled>Selecione um cliente...</option>
-                                                <option v-for="client in clientStore.clientsList" :key="client.id" :value="client.id">
-                                                    {{ client.name }}
-                                                </option>
-                                            </select>
-                                        </div>
-
-                                        <div class="sm:col-span-6">
-                                            <label class="block text-sm font-medium text-slate-700">Descrição do Serviço <span class="text-rose-500">*</span></label>
-                                            <textarea v-model="currentOrder.description" rows="3" required class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
-                                        </div>
-
-                                        <div class="sm:col-span-2">
-                                            <label class="block text-sm font-medium text-slate-700">Status</label>
-                                            <select v-model="currentOrder.status" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                                <option value="Pendente">Pendente</option>
-                                                <option value="Em Andamento">Em Andamento</option>
-                                                <option value="Concluído">Concluído</option>
-                                            </select>
-                                        </div>
-
-                                        <div class="sm:col-span-2">
-                                            <label class="block text-sm font-medium text-slate-700">Prioridade</label>
-                                            <select v-model="currentOrder.priority" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                                <option value="Baixa">Baixa</option>
-                                                <option value="Média">Média</option>
-                                                <option value="Alta">Alta</option>
-                                            </select>
-                                        </div>
-
-                                        <div class="sm:col-span-3">
-                                            <label class="block text-sm font-medium text-slate-700">Data de Início</label>
-                                            <input v-model="currentOrder.start_date" type="date" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                        </div>
-                                        
-                                        <div class="sm:col-span-3">
-                                            <label class="block text-sm font-medium text-slate-700">Data de Término</label>
-                                            <input v-model="currentOrder.end_date" type="date" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                        </div>
-
-                                        <div class="sm:col-span-2">
-                                            <label class="block text-sm font-medium text-slate-700">Horas Estimadas</label>
-                                            <input v-model.number="currentOrder.hours" type="number" step="0.5" min="0" @input="calculateTotalAmount" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                        </div>
-                                        
-                                        <div class="sm:col-span-2">
-                                            <label class="block text-sm font-medium text-slate-700">Valor Hora (R$)</label>
-                                            <input v-model.number="currentOrder.rate" type="number" step="0.01" min="0" @input="calculateTotalAmount" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                        </div>
-
-                                        <div class="sm:col-span-2">
-                                            <label class="block text-sm font-medium text-slate-700">Valor Total (R$)</label>
-                                            <input v-model.number="currentOrder.total_amount" type="number" step="0.01" min="0" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-slate-50" readonly>
-                                        </div>
-
-                                    </div>
-                                    
-                                    <div v-if="dateError" class="mt-4 text-sm text-rose-500 bg-rose-50 p-3 rounded-lg border border-rose-100 animate-pulse">
-                                        {{ dateError }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-slate-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-2xl border-t border-slate-200">
-                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
-                                Salvar O.S.
-                            </button>
-                            <button type="button" @click="closeModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
-                                Cancelar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</template>
-
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useServiceOrderStore } from '../stores/serviceOrderStore';
 import { useClientStore } from '../stores/clientStore';
-import { Plus as PlusIcon, ChevronDown as ChevronDownIcon } from 'lucide-vue-next';
+import AppHeader from '../components/AppHeader.vue';
+import AppSidebar from '../components/AppSidebar.vue';
 import StatusBadge from '../components/StatusBadge.vue';
 
 const serviceOrderStore = useServiceOrderStore();
 const clientStore = useClientStore();
 
-const filterStatus = ref('');
-const filterPriority = ref('');
-const isModalOpen = ref(false);
-const dateError = ref('');
+const showAddModal = ref(false);
+const newOrderForm = ref({ client_id: '', title: '', description: '', amount: 0 });
+const isSubmitting = ref(false);
 
-const currentOrder = ref({
-    id: null,
-    client_id: '',
-    description: '',
-    status: 'Pendente',
-    priority: 'Baixa',
-    start_date: '',
-    end_date: '',
-    hours: 0,
-    rate: 0,
-    total_amount: 0
+onMounted(async () => {
+    await serviceOrderStore.fetchAllServiceOrders();
+    await clientStore.fetchAllClients();
 });
 
-const calculateTotalAmount = () => {
-    const hrs = Number(currentOrder.value.hours) || 0;
-    const rt = Number(currentOrder.value.rate) || 0;
-    currentOrder.value.total_amount = hrs * rt;
-};
+function openAddModal() {
+    newOrderForm.value = { client_id: '', title: '', description: '', amount: 0 };
+    showAddModal.value = true;
+}
 
-const formatDateBR = (dateString) => {
-    if (!dateString) return '';
-    const parts = dateString.split('-');
-    if (parts.length === 3) {
-        return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    }
-    return dateString;
-};
-
-const formatCurrency = (value) => {
-    const val = Number(value) || 0;
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-};
-
-const processedOrders = computed(() => {
-    const list = serviceOrderStore.serviceOrdersList;
-    let filteredList = [];
-
-    // Imperative filtering
-    for (let i = 0; i < list.length; i++) {
-        const order = list[i];
-        let statusMatch = true;
-        let priorityMatch = true;
-
-        if (filterStatus.value !== '') {
-            if (order.status !== filterStatus.value) {
-                statusMatch = false;
-            }
-        }
-
-        if (filterPriority.value !== '') {
-            if (order.priority !== filterPriority.value) {
-                priorityMatch = false;
-            }
-        }
-
-        if (statusMatch === true && priorityMatch === true) {
-            filteredList.push(order);
-        }
-    }
-    
-    return filteredList;
-});
-
-const openModal = (order = null) => {
-    dateError.value = '';
-    if (order) {
-        currentOrder.value = { ...order };
-    } else {
-        currentOrder.value = { 
-            id: null, 
-            client_id: '', 
-            description: '', 
-            status: 'Pendente', 
-            priority: 'Baixa',
-            start_date: '',
-            end_date: '',
-            hours: 0,
-            rate: 0,
-            total_amount: 0 
-        };
-    }
-    isModalOpen.value = true;
-};
-
-const closeModal = () => {
-    isModalOpen.value = false;
-};
-
-const validateServiceOrderInput = () => {
-    dateError.value = '';
-    if (currentOrder.value.start_date && currentOrder.value.end_date) {
-        const start = new Date(currentOrder.value.start_date);
-        const end = new Date(currentOrder.value.end_date);
-        
-        if (end < start) {
-            dateError.value = 'A data de término não pode ser anterior à data de início.';
-            return false;
-        }
-    }
-
-    if (currentOrder.value.total_amount < 0) {
-        currentOrder.value.total_amount = 0;
-    }
-    return true;
-};
-
-const saveServiceOrder = async () => {
-    const isValid = validateServiceOrderInput();
-    if (isValid === false) {
+async function handleCreateOrder() {
+    if (!newOrderForm.value.client_id || !newOrderForm.value.title) {
+        window.showAppToast('Cliente e Título são obrigatórios.', 'error');
         return;
     }
     
-    let isSuccess = false;
-    if (currentOrder.value.id) {
-        isSuccess = await serviceOrderStore.updateServiceOrder(currentOrder.value.id, currentOrder.value);
+    isSubmitting.value = true;
+    const result = await serviceOrderStore.createNewServiceOrder(newOrderForm.value);
+    isSubmitting.value = false;
+    
+    if (result.success) {
+        window.showAppToast('Ordem de serviço criada com sucesso!', 'success');
+        showAddModal.value = false;
     } else {
-        isSuccess = await serviceOrderStore.createServiceOrder(currentOrder.value);
+        window.showAppToast(result.errorMessage, 'error');
     }
+}
 
-    if (isSuccess === true) {
-        closeModal();
-    } else {
-        alert('Erro ao salvar Ordem de Serviço.');
-    }
-};
+async function updateStatus(orderId, currentStatus) {
+    let nextStatus = 'pending';
+    if (currentStatus === 'pending') nextStatus = 'in_progress';
+    else if (currentStatus === 'in_progress') nextStatus = 'completed';
+    else if (currentStatus === 'completed') nextStatus = 'pending';
+    
+    await serviceOrderStore.updateOrderStatus(orderId, nextStatus);
+}
 
-const confirmDelete = async (id) => {
-    if (confirm('Tem certeza que deseja excluir esta Ordem de Serviço?')) {
-        const isSuccess = await serviceOrderStore.deleteServiceOrder(id);
-        if (!isSuccess) {
-            alert('Erro ao excluir Ordem de Serviço.');
-        }
-    }
-};
-
-onMounted(async () => {
-    await clientStore.fetchAllClients();
-    await serviceOrderStore.fetchAllServiceOrders();
-});
+function formatCurrency(value) {
+    if (value === undefined || value === null) return 'R$ 0,00';
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+}
 </script>
+
+<template>
+  <div class="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
+    
+    <div class="fixed inset-0 z-0 pointer-events-none">
+        <div class="absolute top-[20%] left-[10%] w-96 h-96 bg-purple-500/10 rounded-full blur-[100px]"></div>
+        <div class="absolute bottom-[20%] right-[10%] w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px]"></div>
+    </div>
+
+    <AppSidebar class="z-10" />
+    
+    <div class="flex-1 flex flex-col z-10 w-full overflow-hidden">
+        <AppHeader />
+        
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 md:p-8">
+            <div class="max-w-7xl mx-auto space-y-6">
+                
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Ordens de Serviço</h1>
+                        <p class="text-slate-500 dark:text-slate-400 mt-1">Gerencie os serviços prestados aos clientes.</p>
+                    </div>
+                    <button @click="openAddModal" class="glass-button flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Nova O.S.
+                    </button>
+                </div>
+
+                <div class="glass-card overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200/50 dark:border-slate-700/50 text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">
+                                    <th class="p-4 pl-6">ID / Data</th>
+                                    <th class="p-4">Cliente</th>
+                                    <th class="p-4">Serviço</th>
+                                    <th class="p-4 text-center">Status</th>
+                                    <th class="p-4 pr-6 text-right">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200/30 dark:divide-slate-700/30">
+                                <tr v-if="serviceOrderStore.isLoading" class="animate-pulse">
+                                    <td colspan="5" class="p-8 text-center text-slate-400">Carregando ordens de serviço...</td>
+                                </tr>
+                                <tr v-else-if="serviceOrderStore.serviceOrders.length === 0">
+                                    <td colspan="5" class="p-8 text-center text-slate-500 dark:text-slate-400">Nenhuma ordem de serviço registrada.</td>
+                                </tr>
+                                <tr v-for="order in serviceOrderStore.serviceOrders" :key="order.id" class="hover:bg-white/40 dark:hover:bg-slate-800/40 transition-colors duration-200 group">
+                                    <td class="p-4 pl-6">
+                                        <div class="font-bold text-slate-900 dark:text-slate-100">#{{ order.id }}</div>
+                                        <div class="text-xs text-slate-500 mt-0.5">{{ new Date(order.created_at).toLocaleDateString('pt-BR') }}</div>
+                                    </td>
+                                    <td class="p-4 font-medium text-slate-700 dark:text-slate-300">{{ order.client_name }}</td>
+                                    <td class="p-4">
+                                        <div class="text-sm font-medium text-slate-800 dark:text-slate-200">{{ order.title }}</div>
+                                        <div class="text-xs text-slate-500 line-clamp-1 max-w-xs">{{ order.description || 'Sem descrição' }}</div>
+                                    </td>
+                                    <td class="p-4 text-center cursor-pointer" @click="updateStatus(order.id, order.status)" title="Clique para avançar status">
+                                        <StatusBadge :status="order.status" class="hover:ring-2 hover:ring-indigo-500/30 transition-all" />
+                                    </td>
+                                    <td class="p-4 pr-6 text-right font-semibold text-emerald-600 dark:text-emerald-400">{{ formatCurrency(order.amount) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+    
+    <!-- Add OS Modal -->
+    <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+    >
+        <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showAddModal = false"></div>
+            
+            <div class="glass-card w-full max-w-lg relative z-10 p-6 md:p-8 shadow-2xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-slate-800 dark:text-white">Nova Ordem de Serviço</h2>
+                    <button @click="showAddModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                
+                <form @submit.prevent="handleCreateOrder" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Cliente *</label>
+                        <select v-model="newOrderForm.client_id" class="glass-input w-full px-4 py-2 text-slate-800 dark:text-white" required>
+                            <option value="" disabled>Selecione um cliente...</option>
+                            <option v-for="client in clientStore.clients" :key="client.id" :value="client.id">
+                                {{ client.name }}
+                            </option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Título do Serviço *</label>
+                        <input type="text" v-model="newOrderForm.title" class="glass-input w-full px-4 py-2 text-slate-800 dark:text-white" placeholder="Ex: Manutenção de Equipamento" required />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descrição</label>
+                        <textarea v-model="newOrderForm.description" rows="3" class="glass-input w-full px-4 py-2 text-slate-800 dark:text-white"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Valor (R$)</label>
+                        <input type="number" step="0.01" min="0" v-model="newOrderForm.amount" class="glass-input w-full px-4 py-2 text-slate-800 dark:text-white" />
+                    </div>
+                    
+                    <div class="pt-4 flex justify-end gap-3 border-t border-slate-200 dark:border-slate-700/50 mt-6">
+                        <button type="button" @click="showAddModal = false" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">Cancelar</button>
+                        <button type="submit" :disabled="isSubmitting" class="glass-button py-2">{{ isSubmitting ? 'Salvando...' : 'Salvar O.S.' }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </Transition>
+
+  </div>
+</template>

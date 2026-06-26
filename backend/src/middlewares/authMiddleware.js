@@ -1,37 +1,36 @@
 const jwt = require('jsonwebtoken');
-const secretKey = process.env.JWT_SECRET || 'super_secret_key_taskflow';
+const { logSystemEvent } = require('../utils/loggerUtil');
 
-const verifyTokenMiddleware = (req, res, next) => {
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_taskflow';
+
+function requireAuthentication(req, res, next) {
     try {
-        const authHeader = req.headers['authorization'];
-        
-        if (!authHeader) {
-            return res.status(403).json({ error: 'No authorization token provided.' });
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            logSystemEvent('authMiddleware', 'Missing or invalid authorization header', 'WARN');
+            return res.status(401).json({ success: false, errorMessage: 'Authentication required. Missing token.' });
         }
 
-        const tokenParts = authHeader.split(' ');
-        if (tokenParts.length !== 2 || tokenParts[0] !== 'Bearer') {
-            return res.status(401).json({ error: 'Invalid token format.' });
-        }
+        const token = authHeader.split(' ')[1];
 
-        const token = tokenParts[1];
-
-        jwt.verify(token, secretKey, (err, decoded) => {
+        jwt.verify(token, JWT_SECRET, (err, decodedToken) => {
             if (err) {
-                console.log('Error verifying JWT token:', err.message);
-                return res.status(401).json({ error: 'Failed to authenticate token.' });
+                logSystemEvent('authMiddleware', \`Failed to verify token: \${err.message}\`, 'WARN');
+                return res.status(401).json({ success: false, errorMessage: 'Invalid or expired token.' });
             }
+
+            req.userId = decodedToken.userId;
+            req.userEmail = decodedToken.email;
             
-            // Save user ID to request object for use in other routes
-            req.userId = decoded.id;
             next();
         });
     } catch (error) {
-        console.log('Exception in auth middleware:', error);
-        return res.status(500).json({ error: 'Server error during authentication.' });
+        logSystemEvent('authMiddleware', \`Error in authentication middleware: \${error.message}\`, 'ERROR');
+        return res.status(500).json({ success: false, errorMessage: 'Internal server error during authentication.' });
     }
-};
+}
 
 module.exports = {
-    verifyTokenMiddleware
+    requireAuthentication
 };

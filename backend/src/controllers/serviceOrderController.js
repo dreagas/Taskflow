@@ -1,172 +1,166 @@
 const db = require('../config/database');
+const { logSystemEvent } = require('../utils/loggerUtil');
 
-const getAllServiceOrders = (req, res) => {
+function createServiceOrder(req, res) {
     try {
-        const query = `
-            SELECT so.*, c.name as client_name 
-            FROM service_orders so
-            LEFT JOIN clients c ON so.client_id = c.id
-            ORDER BY so.id DESC
-        `;
-        db.all(query, [], (err, rows) => {
-            if (err) {
-                console.log('Error fetching service orders:', err);
-                return res.status(500).json({ error: 'Failed to retrieve service orders.' });
-            }
-            return res.status(200).json(rows);
-        });
-    } catch (error) {
-        console.log('Exception in getAllServiceOrders:', error);
-        return res.status(500).json({ error: 'Unexpected error occurred.' });
-    }
-};
+        const { client_id, title, description, status, amount } = req.body;
 
-const getServiceOrderById = (req, res) => {
+        if (!client_id || !title) {
+            logSystemEvent('serviceOrderController -> createServiceOrder', 'Missing required fields: client_id and title', 'ERROR');
+            return res.status(400).json({ success: false, errorMessage: 'Missing required fields: Client ID and Title are required.' });
+        }
+
+        // Verify if client exists
+        const checkClientStatement = db.prepare('SELECT id FROM clients WHERE id = ?');
+        const client = checkClientStatement.get(client_id);
+        
+        if (!client) {
+             logSystemEvent('serviceOrderController -> createServiceOrder', \`Client not found: ID \${client_id}\`, 'WARN');
+             return res.status(404).json({ success: false, errorMessage: 'Associated client not found.' });
+        }
+
+        const orderStatus = status || 'pending';
+        const orderAmount = amount || 0;
+
+        const insertOrderStatement = db.prepare('INSERT INTO service_orders (client_id, title, description, status, amount) VALUES (?, ?, ?, ?, ?)');
+        const result = insertOrderStatement.run(client_id, title, description || null, orderStatus, orderAmount);
+
+        logSystemEvent('serviceOrderController -> createServiceOrder', \`Service order created successfully: ID \${result.lastInsertRowid}\`);
+
+        const newOrder = db.prepare('SELECT * FROM service_orders WHERE id = ?').get(result.lastInsertRowid);
+
+        return res.status(201).json({ success: true, serviceOrder: newOrder });
+    } catch (error) {
+        logSystemEvent('serviceOrderController -> createServiceOrder', \`Error creating service order: \${error.message}\`, 'ERROR');
+        return res.status(500).json({ success: false, errorMessage: 'Internal server error while creating service order.' });
+    }
+}
+
+function getAllServiceOrders(req, res) {
+    try {
+        const getAllOrdersStatement = db.prepare(\`
+            SELECT 
+                so.*, 
+                c.name as client_name 
+            FROM service_orders so
+            JOIN clients c ON so.client_id = c.id
+            ORDER BY so.created_at DESC
+        \`);
+        const orders = getAllOrdersStatement.all();
+
+        return res.status(200).json({ success: true, serviceOrders: orders });
+    } catch (error) {
+        logSystemEvent('serviceOrderController -> getAllServiceOrders', \`Error fetching service orders: \${error.message}\`, 'ERROR');
+        return res.status(500).json({ success: false, errorMessage: 'Internal server error while fetching service orders.' });
+    }
+}
+
+function getServiceOrderById(req, res) {
     try {
         const orderId = req.params.id;
-        const query = `
-            SELECT so.*, c.name as client_name 
+        const getOrderStatement = db.prepare(\`
+            SELECT 
+                so.*, 
+                c.name as client_name,
+                c.email as client_email,
+                c.phone as client_phone
             FROM service_orders so
-            LEFT JOIN clients c ON so.client_id = c.id
+            JOIN clients c ON so.client_id = c.id
             WHERE so.id = ?
-        `;
-        db.get(query, [orderId], (err, row) => {
-            if (err) {
-                console.log('Error fetching service order by ID:', err);
-                return res.status(500).json({ error: 'Failed to retrieve service order.' });
-            }
-            if (!row) {
-                return res.status(404).json({ error: 'Service order not found.' });
-            }
-            return res.status(200).json(row);
-        });
-    } catch (error) {
-        console.log('Exception in getServiceOrderById:', error);
-        return res.status(500).json({ error: 'Unexpected error occurred.' });
-    }
-};
+        \`);
+        const order = getOrderStatement.get(orderId);
 
-const createNewServiceOrder = (req, res) => {
-    try {
-        const clientId = req.body.client_id;
-        const description = req.body.description;
-        const status = req.body.status || 'Pendente';
-        const priority = req.body.priority || 'Baixa';
-        const startDate = req.body.start_date || null;
-        const endDate = req.body.end_date || null;
-        const hours = req.body.hours || 0;
-        const rate = req.body.rate || 0;
-        const totalAmount = req.body.total_amount || 0;
-
-        if (!clientId || !description) {
-            return res.status(400).json({ error: 'Client ID and description are required fields.' });
+        if (!order) {
+            logSystemEvent('serviceOrderController -> getServiceOrderById', \`Service order not found: ID \${orderId}\`, 'WARN');
+            return res.status(404).json({ success: false, errorMessage: 'Service order not found.' });
         }
 
-        // Verify if client exists before creating service order
-        db.get("SELECT id FROM clients WHERE id = ?", [clientId], (err, row) => {
-            if (err) {
-                console.log('Error checking client existence:', err);
-                return res.status(500).json({ error: 'Database error while checking client.' });
-            }
-            if (!row) {
-                return res.status(400).json({ error: 'Provided Client ID does not exist.' });
-            }
-
-            db.run(
-                "INSERT INTO service_orders (client_id, description, status, priority, start_date, end_date, hours, rate, total_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [clientId, description, status, priority, startDate, endDate, hours, rate, totalAmount],
-                function(err) {
-                    if (err) {
-                        console.log('Error creating service order:', err);
-                        return res.status(500).json({ error: 'Failed to create service order.' });
-                    }
-                    const newOrderId = this.lastID;
-                    return res.status(201).json({
-                        message: 'Service order created successfully.',
-                        serviceOrder: {
-                            id: newOrderId,
-                            client_id: clientId,
-                            description: description,
-                            status: status,
-                            priority: priority,
-                            start_date: startDate,
-                            end_date: endDate,
-                            hours: hours,
-                            rate: rate,
-                            total_amount: totalAmount
-                        }
-                    });
-                }
-            );
-        });
+        return res.status(200).json({ success: true, serviceOrder: order });
     } catch (error) {
-        console.log('Exception in createNewServiceOrder:', error);
-        return res.status(500).json({ error: 'Unexpected error occurred.' });
+        logSystemEvent('serviceOrderController -> getServiceOrderById', \`Error fetching service order: \${error.message}\`, 'ERROR');
+        return res.status(500).json({ success: false, errorMessage: 'Internal server error while fetching service order.' });
     }
-};
+}
 
-const updateExistingServiceOrder = (req, res) => {
+function updateServiceOrder(req, res) {
     try {
         const orderId = req.params.id;
-        const clientId = req.body.client_id;
-        const description = req.body.description;
-        const status = req.body.status;
-        const priority = req.body.priority;
-        const startDate = req.body.start_date || null;
-        const endDate = req.body.end_date || null;
-        const hours = req.body.hours || 0;
-        const rate = req.body.rate || 0;
-        const totalAmount = req.body.total_amount || 0;
+        const { title, description, status, amount } = req.body;
 
-        if (!clientId || !description || !status || !priority) {
-            return res.status(400).json({ error: 'Client ID, description, status and priority are required fields.' });
+        if (!title || !status) {
+            logSystemEvent('serviceOrderController -> updateServiceOrder', 'Missing required fields: title and status', 'ERROR');
+            return res.status(400).json({ success: false, errorMessage: 'Missing required fields: Title and Status are required.' });
         }
 
-        db.run(
-            "UPDATE service_orders SET client_id = ?, description = ?, status = ?, priority = ?, start_date = ?, end_date = ?, hours = ?, rate = ?, total_amount = ? WHERE id = ?",
-            [clientId, description, status, priority, startDate, endDate, hours, rate, totalAmount, orderId],
-            function(err) {
-                if (err) {
-                    console.log('Error updating service order:', err);
-                    return res.status(500).json({ error: 'Failed to update service order.' });
-                }
-                if (this.changes === 0) {
-                    return res.status(404).json({ error: 'Service order not found to update.' });
-                }
-                return res.status(200).json({
-                    message: 'Service order updated successfully.'
-                });
-            }
-        );
-    } catch (error) {
-        console.log('Exception in updateExistingServiceOrder:', error);
-        return res.status(500).json({ error: 'Unexpected error occurred.' });
-    }
-};
+        const updateOrderStatement = db.prepare('UPDATE service_orders SET title = ?, description = ?, status = ?, amount = ? WHERE id = ?');
+        const result = updateOrderStatement.run(title, description || null, status, amount || 0, orderId);
 
-const deleteServiceOrderRecord = (req, res) => {
-    try {
+        if (result.changes === 0) {
+             logSystemEvent('serviceOrderController -> updateServiceOrder', \`Service order not found for update: ID \${orderId}\`, 'WARN');
+             return res.status(404).json({ success: false, errorMessage: 'Service order not found.' });
+        }
+
+        logSystemEvent('serviceOrderController -> updateServiceOrder', \`Service order updated successfully: ID \${orderId}\`);
+        
+        const updatedOrder = db.prepare('SELECT * FROM service_orders WHERE id = ?').get(orderId);
+        return res.status(200).json({ success: true, serviceOrder: updatedOrder });
+
+    } catch (error) {
+        logSystemEvent('serviceOrderController -> updateServiceOrder', \`Error updating service order: \${error.message}\`, 'ERROR');
+        return res.status(500).json({ success: false, errorMessage: 'Internal server error while updating service order.' });
+    }
+}
+
+function deleteServiceOrder(req, res) {
+     try {
         const orderId = req.params.id;
-        db.run("DELETE FROM service_orders WHERE id = ?", [orderId], function(err) {
-            if (err) {
-                console.log('Error deleting service order:', err);
-                return res.status(500).json({ error: 'Failed to delete service order.' });
+
+        const deleteOrderStatement = db.prepare('DELETE FROM service_orders WHERE id = ?');
+        const result = deleteOrderStatement.run(orderId);
+
+        if (result.changes === 0) {
+             logSystemEvent('serviceOrderController -> deleteServiceOrder', \`Service order not found for deletion: ID \${orderId}\`, 'WARN');
+             return res.status(404).json({ success: false, errorMessage: 'Service order not found.' });
+        }
+
+        logSystemEvent('serviceOrderController -> deleteServiceOrder', \`Service order deleted successfully: ID \${orderId}\`);
+        return res.status(200).json({ success: true, message: 'Service order deleted successfully.' });
+
+    } catch (error) {
+        logSystemEvent('serviceOrderController -> deleteServiceOrder', \`Error deleting service order: \${error.message}\`, 'ERROR');
+        return res.status(500).json({ success: false, errorMessage: 'Internal server error while deleting service order.' });
+    }
+}
+
+function getDashboardMetrics(req, res) {
+    try {
+        const totalClients = db.prepare('SELECT count(*) as count FROM clients').get().count;
+        const totalOrders = db.prepare('SELECT count(*) as count FROM service_orders').get().count;
+        const pendingOrders = db.prepare("SELECT count(*) as count FROM service_orders WHERE status = 'pending'").get().count;
+        const totalRevenueResult = db.prepare("SELECT sum(amount) as total FROM service_orders WHERE status = 'completed'").get().total;
+        
+        const totalRevenue = totalRevenueResult || 0;
+
+        return res.status(200).json({
+            success: true,
+            metrics: {
+                totalClients,
+                totalOrders,
+                pendingOrders,
+                totalRevenue
             }
-            if (this.changes === 0) {
-                return res.status(404).json({ error: 'Service order not found to delete.' });
-            }
-            return res.status(200).json({ message: 'Service order deleted successfully.' });
         });
     } catch (error) {
-        console.log('Exception in deleteServiceOrderRecord:', error);
-        return res.status(500).json({ error: 'Unexpected error occurred.' });
+        logSystemEvent('serviceOrderController -> getDashboardMetrics', \`Error fetching metrics: \${error.message}\`, 'ERROR');
+        return res.status(500).json({ success: false, errorMessage: 'Internal server error while fetching metrics.' });
     }
-};
+}
 
 module.exports = {
+    createServiceOrder,
     getAllServiceOrders,
     getServiceOrderById,
-    createNewServiceOrder,
-    updateExistingServiceOrder,
-    deleteServiceOrderRecord
+    updateServiceOrder,
+    deleteServiceOrder,
+    getDashboardMetrics
 };

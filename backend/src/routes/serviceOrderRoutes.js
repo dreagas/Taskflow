@@ -1,15 +1,24 @@
 const express = require('express');
+const { 
+    createServiceOrder, 
+    getAllServiceOrders, 
+    getServiceOrderById, 
+    updateServiceOrder, 
+    deleteServiceOrder,
+    getDashboardMetrics
+} = require('../controllers/serviceOrderController');
+const { requireAuthentication } = require('../middlewares/authMiddleware');
+
 const router = express.Router();
-const serviceOrderController = require('../controllers/serviceOrderController');
-const authMiddleware = require('../middlewares/authMiddleware');
 
-// Protected routes
-router.use(authMiddleware.verifyTokenMiddleware);
+router.use(requireAuthentication); // Protect all service order routes
 
-router.get('/', serviceOrderController.getAllServiceOrders);
-router.get('/:id', serviceOrderController.getServiceOrderById);
-router.post('/', serviceOrderController.createNewServiceOrder);
-router.put('/:id', serviceOrderController.updateExistingServiceOrder);
-router.delete('/:id', serviceOrderController.deleteServiceOrderRecord);
+router.get('/metrics', getDashboardMetrics);
+router.post('/', createServiceOrder);
+router.get('/', getAllServiceOrders);
+router.get('/:id', getServiceOrderById);
+router.put('/:id', updateServiceOrder);
+router.delete('/:id', deleteServiceOrder);
+
 
 module.exports = router;

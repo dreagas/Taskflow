@@ -1,175 +1,121 @@
 const db = require('../config/database');
+const { logSystemEvent } = require('../utils/loggerUtil');
 
-const getAllClients = (req, res) => {
+function createClient(req, res) {
     try {
-        db.all("SELECT * FROM clients ORDER BY id DESC", [], (err, rows) => {
-            if (err) {
-                console.log('Error fetching clients:', err);
-                return res.status(500).json({ error: 'Failed to retrieve clients.' });
-            }
-            return res.status(200).json(rows);
-        });
-    } catch (error) {
-        console.log('Exception in getAllClients:', error);
-        return res.status(500).json({ error: 'Unexpected error occurred.' });
-    }
-};
+        const { name, email, phone, address } = req.body;
 
-const getClientById = (req, res) => {
-    try {
-        const clientId = req.params.id;
-        db.get("SELECT * FROM clients WHERE id = ?", [clientId], (err, row) => {
-            if (err) {
-                console.log('Error fetching client by ID:', err);
-                return res.status(500).json({ error: 'Failed to retrieve client.' });
-            }
-            if (!row) {
-                return res.status(404).json({ error: 'Client not found.' });
-            }
-            return res.status(200).json(row);
-        });
-    } catch (error) {
-        console.log('Exception in getClientById:', error);
-        return res.status(500).json({ error: 'Unexpected error occurred.' });
-    }
-};
-
-const createNewClient = (req, res) => {
-    try {
-        const name = req.body.name;
-        const email = req.body.email;
-        const phone = req.body.phone;
-        const company = req.body.company;
-
-        if (!name || !email || !phone) {
-            return res.status(400).json({ error: 'Name, email and phone are required fields.' });
+        if (!name || !email) {
+            logSystemEvent('clientController -> createClient', 'Missing required fields: name and email', 'ERROR');
+            return res.status(400).json({ success: false, errorMessage: 'Missing required fields: Name and email are required.' });
         }
 
-        db.run(
-            "INSERT INTO clients (name, email, phone, company) VALUES (?, ?, ?, ?)",
-            [name, email, phone, company],
-            function(err) {
-                if (err) {
-                    console.log('Error creating client:', err);
-                    return res.status(500).json({ error: 'Failed to create client.' });
-                }
-                const newClientId = this.lastID;
-                return res.status(201).json({
-                    message: 'Client created successfully.',
-                    client: {
-                        id: newClientId,
-                        name: name,
-                        email: email,
-                        phone: phone,
-                        company: company
-                    }
-                });
-            }
-        );
-    } catch (error) {
-        console.log('Exception in createNewClient:', error);
-        return res.status(500).json({ error: 'Unexpected error occurred.' });
-    }
-};
+        const insertClientStatement = db.prepare('INSERT INTO clients (name, email, phone, address) VALUES (?, ?, ?, ?)');
+        const result = insertClientStatement.run(name, email, phone || null, address || null);
 
-const updateExistingClient = (req, res) => {
+        logSystemEvent('clientController -> createClient', \`Client created successfully: ID \${result.lastInsertRowid}\`);
+
+        const newClient = db.prepare('SELECT * FROM clients WHERE id = ?').get(result.lastInsertRowid);
+
+        return res.status(201).json({ success: true, client: newClient });
+    } catch (error) {
+        logSystemEvent('clientController -> createClient', \`Error creating client: \${error.message}\`, 'ERROR');
+        return res.status(500).json({ success: false, errorMessage: 'Internal server error while creating client.' });
+    }
+}
+
+function getAllClients(req, res) {
+    try {
+        const getAllClientsStatement = db.prepare('SELECT * FROM clients ORDER BY created_at DESC');
+        const clients = getAllClientsStatement.all();
+
+        return res.status(200).json({ success: true, clients });
+    } catch (error) {
+        logSystemEvent('clientController -> getAllClients', \`Error fetching clients: \${error.message}\`, 'ERROR');
+        return res.status(500).json({ success: false, errorMessage: 'Internal server error while fetching clients.' });
+    }
+}
+
+function getClientById(req, res) {
     try {
         const clientId = req.params.id;
-        const name = req.body.name;
-        const email = req.body.email;
-        const phone = req.body.phone;
-        const company = req.body.company;
+        const getClientStatement = db.prepare('SELECT * FROM clients WHERE id = ?');
+        const client = getClientStatement.get(clientId);
 
-        if (!name || !email || !phone) {
-            return res.status(400).json({ error: 'Name, email and phone are required fields.' });
+        if (!client) {
+            logSystemEvent('clientController -> getClientById', \`Client not found: ID \${clientId}\`, 'WARN');
+            return res.status(404).json({ success: false, errorMessage: 'Client not found.' });
         }
 
-        db.run(
-            "UPDATE clients SET name = ?, email = ?, phone = ?, company = ? WHERE id = ?",
-            [name, email, phone, company, clientId],
-            function(err) {
-                if (err) {
-                    console.log('Error updating client:', err);
-                    return res.status(500).json({ error: 'Failed to update client.' });
-                }
-                if (this.changes === 0) {
-                    return res.status(404).json({ error: 'Client not found to update.' });
-                }
-                return res.status(200).json({
-                    message: 'Client updated successfully.'
-                });
-            }
-        );
+        return res.status(200).json({ success: true, client });
     } catch (error) {
-        console.log('Exception in updateExistingClient:', error);
-        return res.status(500).json({ error: 'Unexpected error occurred.' });
+        logSystemEvent('clientController -> getClientById', \`Error fetching client: \${error.message}\`, 'ERROR');
+        return res.status(500).json({ success: false, errorMessage: 'Internal server error while fetching client.' });
     }
-};
+}
 
-const deleteClientRecord = (req, res) => {
+function updateClient(req, res) {
     try {
         const clientId = req.params.id;
-        db.run("DELETE FROM clients WHERE id = ?", [clientId], function(err) {
-            if (err) {
-                console.log('Error deleting client:', err);
-                return res.status(500).json({ error: 'Failed to delete client.' });
-            }
-            if (this.changes === 0) {
-                return res.status(404).json({ error: 'Client not found to delete.' });
-            }
-            return res.status(200).json({ message: 'Client deleted successfully.' });
-        });
+        const { name, email, phone, address } = req.body;
+
+        if (!name || !email) {
+            logSystemEvent('clientController -> updateClient', 'Missing required fields: name and email', 'ERROR');
+            return res.status(400).json({ success: false, errorMessage: 'Missing required fields: Name and email are required.' });
+        }
+
+        const updateClientStatement = db.prepare('UPDATE clients SET name = ?, email = ?, phone = ?, address = ? WHERE id = ?');
+        const result = updateClientStatement.run(name, email, phone || null, address || null, clientId);
+
+        if (result.changes === 0) {
+             logSystemEvent('clientController -> updateClient', \`Client not found for update: ID \${clientId}\`, 'WARN');
+             return res.status(404).json({ success: false, errorMessage: 'Client not found.' });
+        }
+
+        logSystemEvent('clientController -> updateClient', \`Client updated successfully: ID \${clientId}\`);
+        
+        const updatedClient = db.prepare('SELECT * FROM clients WHERE id = ?').get(clientId);
+        return res.status(200).json({ success: true, client: updatedClient });
+
     } catch (error) {
-        console.log('Exception in deleteClientRecord:', error);
-        return res.status(500).json({ error: 'Unexpected error occurred.' });
+        logSystemEvent('clientController -> updateClient', \`Error updating client: \${error.message}\`, 'ERROR');
+        return res.status(500).json({ success: false, errorMessage: 'Internal server error while updating client.' });
     }
-};
+}
 
-const getDashboardMetrics = (req, res) => {
-    try {
-        let totalClients = 0;
-        let totalOrders = 0;
-        let pendingOrders = 0;
-        let completedOrders = 0;
-        let totalRevenue = 0;
+function deleteClient(req, res) {
+     try {
+        const clientId = req.params.id;
 
-        db.get("SELECT COUNT(*) as count FROM clients", [], (err, row) => {
-            if (!err && row) totalClients = row.count;
-            
-            db.get("SELECT COUNT(*) as count FROM service_orders", [], (err, row) => {
-                if (!err && row) totalOrders = row.count;
-                
-                db.get("SELECT COUNT(*) as count FROM service_orders WHERE status = 'Pendente' OR status = 'Em Andamento'", [], (err, row) => {
-                    if (!err && row) pendingOrders = row.count;
-                    
-                    db.get("SELECT COUNT(*) as count, SUM(total_amount) as revenue FROM service_orders WHERE status = 'Concluído'", [], (err, row) => {
-                        if (!err && row) {
-                            completedOrders = row.count;
-                            totalRevenue = row.revenue || 0;
-                        }
+        const checkOrdersStatement = db.prepare('SELECT count(*) as count FROM service_orders WHERE client_id = ?');
+        const orderCount = checkOrdersStatement.get(clientId).count;
 
-                        return res.status(200).json({
-                            totalClients: totalClients,
-                            totalOrders: totalOrders,
-                            pendingOrders: pendingOrders,
-                            completedOrders: completedOrders,
-                            totalRevenue: totalRevenue
-                        });
-                    });
-                });
-            });
-        });
+        if (orderCount > 0) {
+             logSystemEvent('clientController -> deleteClient', \`Cannot delete client \${clientId} because they have associated service orders.\`, 'WARN');
+             return res.status(400).json({ success: false, errorMessage: 'Cannot delete client. They have associated service orders.' });
+        }
+
+        const deleteClientStatement = db.prepare('DELETE FROM clients WHERE id = ?');
+        const result = deleteClientStatement.run(clientId);
+
+        if (result.changes === 0) {
+             logSystemEvent('clientController -> deleteClient', \`Client not found for deletion: ID \${clientId}\`, 'WARN');
+             return res.status(404).json({ success: false, errorMessage: 'Client not found.' });
+        }
+
+        logSystemEvent('clientController -> deleteClient', \`Client deleted successfully: ID \${clientId}\`);
+        return res.status(200).json({ success: true, message: 'Client deleted successfully.' });
+
     } catch (error) {
-         console.log('Exception in getDashboardMetrics:', error);
-         return res.status(500).json({ error: 'Unexpected error occurred.' });
+        logSystemEvent('clientController -> deleteClient', \`Error deleting client: \${error.message}\`, 'ERROR');
+        return res.status(500).json({ success: false, errorMessage: 'Internal server error while deleting client.' });
     }
 }
 
 module.exports = {
+    createClient,
     getAllClients,
     getClientById,
-    createNewClient,
-    updateExistingClient,
-    deleteClientRecord,
-    getDashboardMetrics
+    updateClient,
+    deleteClient
 };

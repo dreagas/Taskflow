@@ -1,115 +1,108 @@
+const db = require('../config/database');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../config/database');
+const { logSystemEvent } = require('../utils/loggerUtil');
 
-const secretKey = process.env.JWT_SECRET || 'super_secret_key_taskflow';
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_taskflow';
 
-const registerUser = (req, res) => {
+function registerUser(req, res) {
     try {
-        const name = req.body.name;
-        const email = req.body.email;
-        const password = req.body.password;
+        const { name, email, password } = req.body;
 
         if (!name || !email || !password) {
-            return res.status(400).json({ error: 'All fields are required.' });
+            logSystemEvent('authController -> registerUser', 'Missing required fields for registration', 'ERROR');
+            return res.status(400).json({ success: false, errorMessage: 'Missing required fields: name, email, and password are required.' });
         }
 
-        db.get("SELECT * FROM users WHERE email = ?", [email], (err, row) => {
-            if (err) {
-                console.log('Error verifying existing user:', err);
-                return res.status(500).json({ error: 'Internal server error.' });
-            }
+        const checkEmailStatement = db.prepare('SELECT id FROM users WHERE email = ?');
+        const existingUser = checkEmailStatement.get(email);
 
-            if (row) {
-                return res.status(400).json({ error: 'Email already registered.' });
-            }
+        if (existingUser) {
+            logSystemEvent('authController -> registerUser', \`Email already in use: \${email}\`, 'WARN');
+            return res.status(400).json({ success: false, errorMessage: 'This email is already registered.' });
+        }
 
-            const salt = bcrypt.genSaltSync(10);
-            const hashedPassword = bcrypt.hashSync(password, salt);
+        const saltRounds = 10;
+        const hashedPassword = bcrypt.hashSync(password, saltRounds);
 
-            db.run("INSERT INTO users (name, email, password) VALUES (?, ?, ?)", [name, email, hashedPassword], function(err) {
-                if (err) {
-                    console.log('Error inserting new user:', err);
-                    return res.status(500).json({ error: 'Error creating user.' });
-                }
+        const insertUserStatement = db.prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)');
+        const result = insertUserStatement.run(name, email, hashedPassword);
 
-                const newUserId = this.lastID;
-                const token = jwt.sign({ id: newUserId, name: name }, secretKey, { expiresIn: '8h' });
+        logSystemEvent('authController -> registerUser', \`User registered successfully: \${email} (ID: \${result.lastInsertRowid})\`);
 
-                return res.status(201).json({
-                    message: 'User registered successfully.',
-                    user: { id: newUserId, name: name, email: email },
-                    token: token
-                });
-            });
+        const token = jwt.sign({ userId: result.lastInsertRowid, email: email }, JWT_SECRET, { expiresIn: '24h' });
+
+        return res.status(201).json({
+            success: true,
+            user: { id: result.lastInsertRowid, name, email },
+            token
         });
     } catch (error) {
-        console.log('Exception in registerUser:', error);
-        return res.status(500).json({ error: 'Unexpected error occurred.' });
+        logSystemEvent('authController -> registerUser', \`Error registering user: \${error.message}\`, 'ERROR');
+        return res.status(500).json({ success: false, errorMessage: 'Internal server error during registration.' });
     }
-};
+}
 
-const loginUser = (req, res) => {
+function loginUser(req, res) {
     try {
-        const email = req.body.email;
-        const password = req.body.password;
+        const { email, password } = req.body;
 
         if (!email || !password) {
-            return res.status(400).json({ error: 'Email and password are required.' });
+            logSystemEvent('authController -> loginUser', 'Missing required fields for login', 'ERROR');
+            return res.status(400).json({ success: false, errorMessage: 'Missing required fields: email and password are required.' });
         }
 
-        db.get("SELECT * FROM users WHERE email = ?", [email], (err, row) => {
-            if (err) {
-                console.log('Error searching for user:', err);
-                return res.status(500).json({ error: 'Internal server error.' });
-            }
+        const getUserStatement = db.prepare('SELECT * FROM users WHERE email = ?');
+        const user = getUserStatement.get(email);
 
-            if (!row) {
-                return res.status(401).json({ error: 'Invalid email or password.' });
-            }
+        if (!user) {
+            logSystemEvent('authController -> loginUser', \`User not found for email: \${email}\`, 'WARN');
+            return res.status(401).json({ success: false, errorMessage: 'Invalid email or password.' });
+        }
 
-            const isPasswordValid = bcrypt.compareSync(password, row.password);
+        const isPasswordValid = bcrypt.compareSync(password, user.password);
 
-            if (isPasswordValid === false) {
-                return res.status(401).json({ error: 'Invalid email or password.' });
-            }
+        if (isPasswordValid === false) {
+             logSystemEvent('authController -> loginUser', \`Invalid password for email: \${email}\`, 'WARN');
+             return res.status(401).json({ success: false, errorMessage: 'Invalid email or password.' });
+        }
 
-            const token = jwt.sign({ id: row.id, name: row.name }, secretKey, { expiresIn: '8h' });
+        logSystemEvent('authController -> loginUser', \`User logged in successfully: \${email}\`);
 
-            return res.status(200).json({
-                message: 'Login successful.',
-                user: { id: row.id, name: row.name, email: row.email },
-                token: token
-            });
+        const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
+
+        return res.status(200).json({
+            success: true,
+            user: { id: user.id, name: user.name, email: user.email },
+            token
         });
     } catch (error) {
-        console.log('Exception in loginUser:', error);
-        return res.status(500).json({ error: 'Unexpected error occurred.' });
+        logSystemEvent('authController -> loginUser', \`Error during login: \${error.message}\`, 'ERROR');
+        return res.status(500).json({ success: false, errorMessage: 'Internal server error during login.' });
     }
-};
+}
 
-const getAuthenticatedUser = (req, res) => {
-    try {
+function getAuthenticatedUserProfile(req, res) {
+     try {
         const userId = req.userId;
-        
-        db.get("SELECT id, name, email FROM users WHERE id = ?", [userId], (err, row) => {
-            if (err) {
-                console.log('Error fetching user info:', err);
-                return res.status(500).json({ error: 'Internal server error.' });
-            }
-            if (!row) {
-                 return res.status(404).json({ error: 'User not found.' });
-            }
-            return res.status(200).json({ user: row });
-        });
-    } catch(error) {
-        console.log('Exception in getAuthenticatedUser:', error);
-        return res.status(500).json({ error: 'Unexpected error occurred.' });
-    }
+        const getUserStatement = db.prepare('SELECT id, name, email FROM users WHERE id = ?');
+        const user = getUserStatement.get(userId);
+
+        if (!user) {
+             logSystemEvent('authController -> getAuthenticatedUserProfile', \`User profile not found for ID: \${userId}\`, 'WARN');
+             return res.status(404).json({ success: false, errorMessage: 'User profile not found.' });
+        }
+
+        return res.status(200).json({ success: true, user });
+
+     } catch (error) {
+        logSystemEvent('authController -> getAuthenticatedUserProfile', \`Error fetching user profile: \${error.message}\`, 'ERROR');
+        return res.status(500).json({ success: false, errorMessage: 'Internal server error while fetching profile.' });
+     }
 }
 
 module.exports = {
     registerUser,
     loginUser,
-    getAuthenticatedUser
+    getAuthenticatedUserProfile
 };
