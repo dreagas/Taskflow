@@ -23,9 +23,9 @@ export const useClientStore = defineStore('client', () => {
             const response = await fetch(`${API_URL}/clients`, {
                 headers: getAuthHeaders()
             });
-            
+
             const data = await response.json();
-            
+
             if (response.ok && data.success === true) {
                 clients.value = data.clients;
                 return { success: true };
@@ -49,9 +49,9 @@ export const useClientStore = defineStore('client', () => {
                 headers: getAuthHeaders(),
                 body: JSON.stringify(clientData)
             });
-            
+
             const data = await response.json();
-            
+
             if (response.ok && data.success === true) {
                 clients.value.unshift(data.client); // Add to top
                 return { success: true, client: data.client };
@@ -63,7 +63,7 @@ export const useClientStore = defineStore('client', () => {
             return { success: false, errorMessage: 'Erro de conexão com o servidor.' };
         }
     }
-    
+
     async function removeClient(clientId) {
          try {
             console.log(`[clientStore -> removeClient] Removendo cliente: ${clientId}`);
@@ -71,9 +71,9 @@ export const useClientStore = defineStore('client', () => {
                 method: 'DELETE',
                 headers: getAuthHeaders()
             });
-            
+
             const data = await response.json();
-            
+
             if (response.ok && data.success === true) {
                 clients.value = clients.value.filter(c => c.id !== clientId);
                 return { success: true };

@@ -23,9 +23,9 @@ export const useServiceOrderStore = defineStore('serviceOrder', () => {
             const response = await fetch(`${API_URL}/service-orders/metrics`, {
                 headers: getAuthHeaders()
             });
-            
+
             const data = await response.json();
-            
+
             if (response.ok && data.success === true) {
                 dashboardMetrics.value = data.metrics;
                 return { success: true };
@@ -46,9 +46,9 @@ export const useServiceOrderStore = defineStore('serviceOrder', () => {
             const response = await fetch(`${API_URL}/service-orders`, {
                 headers: getAuthHeaders()
             });
-            
+
             const data = await response.json();
-            
+
             if (response.ok && data.success === true) {
                 serviceOrders.value = data.serviceOrders;
                 return { success: true };
@@ -71,9 +71,9 @@ export const useServiceOrderStore = defineStore('serviceOrder', () => {
                 headers: getAuthHeaders(),
                 body: JSON.stringify(orderData)
             });
-            
+
             const data = await response.json();
-            
+
             if (response.ok && data.success === true) {
                 // To keep client_name, we just refetch all for simplicity
                 await fetchAllServiceOrders();
@@ -87,15 +87,15 @@ export const useServiceOrderStore = defineStore('serviceOrder', () => {
             return { success: false, errorMessage: 'Erro de conexão com o servidor.' };
         }
     }
-    
+
     async function updateOrderStatus(orderId, newStatus) {
          try {
             console.log(`[serviceOrderStore -> updateOrderStatus] Atualizando OS ${orderId} para ${newStatus}...`);
-            
+
             // First fetch the current order to keep other fields
             const currentOrder = serviceOrders.value.find(o => o.id === orderId);
             if (!currentOrder) return { success: false, errorMessage: 'OS não encontrada.' };
-            
+
             const payload = {
                 title: currentOrder.title,
                 description: currentOrder.description,
@@ -108,9 +108,9 @@ export const useServiceOrderStore = defineStore('serviceOrder', () => {
                 headers: getAuthHeaders(),
                 body: JSON.stringify(payload)
             });
-            
+
             const data = await response.json();
-            
+
             if (response.ok && data.success === true) {
                 await fetchAllServiceOrders();
                 fetchDashboardMetrics();
@@ -123,7 +123,7 @@ export const useServiceOrderStore = defineStore('serviceOrder', () => {
             return { success: false, errorMessage: 'Erro de conexão com o servidor.' };
         }
     }
-    
+
     async function removeServiceOrder(orderId) {
          try {
             console.log(`[serviceOrderStore -> removeServiceOrder] Removendo OS: ${orderId}`);
@@ -131,9 +131,9 @@ export const useServiceOrderStore = defineStore('serviceOrder', () => {
                 method: 'DELETE',
                 headers: getAuthHeaders()
             });
-            
+
             const data = await response.json();
-            
+
             if (response.ok && data.success === true) {
                 serviceOrders.value = serviceOrders.value.filter(o => o.id !== orderId);
                 fetchDashboardMetrics();

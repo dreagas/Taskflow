@@ -1,10 +1,10 @@
 const express = require('express');
-const { 
-    createClient, 
-    getAllClients, 
-    getClientById, 
-    updateClient, 
-    deleteClient 
+const {
+    createClient,
+    getAllClients,
+    getClientById,
+    updateClient,
+    deleteClient
 } = require('../controllers/clientController');
 const { requireAuthentication } = require('../middlewares/authMiddleware');
 

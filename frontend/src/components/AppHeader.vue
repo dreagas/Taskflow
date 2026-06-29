@@ -34,13 +34,13 @@ function handleLogout() {
           <p class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ authStore.user?.name || 'Usuário' }}</p>
           <p class="text-xs text-slate-500 dark:text-slate-400">{{ authStore.user?.email || 'admin@taskflow.com' }}</p>
         </div>
-        
+
         <div class="relative group">
             <div class="h-10 w-10 overflow-hidden rounded-full border-2 border-indigo-500/50 shadow-md cursor-pointer hover:border-indigo-500 transition-colors bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold">
                 <img src="/images/backgrounds/img_user_avatar_placeholder.png" alt="Avatar" class="h-full w-full object-cover hidden" />
                 <span>{{ userInitials }}</span>
             </div>
-            
+
             <div class="absolute right-0 top-full mt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right scale-95 group-hover:scale-100 z-50">
                 <div class="glass-card py-2 shadow-xl border border-slate-200/50 dark:border-slate-700/50">
                     <button @click="handleLogout" class="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors">

@@ -16,17 +16,17 @@ function requireAuthentication(req, res, next) {
 
         jwt.verify(token, JWT_SECRET, (err, decodedToken) => {
             if (err) {
-                logSystemEvent('authMiddleware', \`Failed to verify token: \${err.message}\`, 'WARN');
+                logSystemEvent('authMiddleware', `Failed to verify token: ${err.message}`, 'WARN');
                 return res.status(401).json({ success: false, errorMessage: 'Invalid or expired token.' });
             }
 
             req.userId = decodedToken.userId;
             req.userEmail = decodedToken.email;
-            
+
             next();
         });
     } catch (error) {
-        logSystemEvent('authMiddleware', \`Error in authentication middleware: \${error.message}\`, 'ERROR');
+        logSystemEvent('authMiddleware', `Error in authentication middleware: ${error.message}`, 'ERROR');
         return res.status(500).json({ success: false, errorMessage: 'Internal server error during authentication.' });
     }
 }

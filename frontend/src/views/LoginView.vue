@@ -17,11 +17,11 @@ async function handleLoginSubmit() {
     }
 
     isSubmitting.value = true;
-    
+
     const result = await authStore.login(emailInput.value, passwordInput.value);
-    
+
     isSubmitting.value = false;
-    
+
     if (result.success === true) {
         window.showAppToast('Login realizado com sucesso!', 'success');
         router.push('/');
@@ -33,11 +33,11 @@ async function handleLoginSubmit() {
 
 <template>
   <div class="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-900">
-    
+
     <!-- Background Image with fallback styling -->
     <div class="absolute inset-0 z-0">
         <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/80 via-slate-900/90 to-purple-900/80 mix-blend-multiply z-10"></div>
-        <img src="/images/backgrounds/img_login.jpg" alt="Background" class="w-full h-full object-cover object-center opacity-40" 
+        <img src="/images/backgrounds/img_login.jpg" alt="Background" class="w-full h-full object-cover object-center opacity-40"
              @error="$event.target.style.display='none'" />
     </div>
 
@@ -47,7 +47,7 @@ async function handleLoginSubmit() {
 
     <div class="w-full max-w-md relative z-10 px-6">
       <div class="glass p-10 rounded-3xl text-center">
-        
+
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 mb-6">
             <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
         </div>
@@ -56,7 +56,7 @@ async function handleLoginSubmit() {
         <p class="text-slate-300 text-sm mb-8">Faça login para acessar seu painel.</p>
 
         <form @submit.prevent="handleLoginSubmit" class="space-y-5 text-left">
-          
+
           <div>
             <label class="block text-sm font-medium text-slate-200 mb-1.5">E-mail</label>
             <input type="email" v-model="emailInput" class="glass-input w-full px-4 py-3 text-slate-100 placeholder-slate-400 bg-white/5 border-white/10" placeholder="admin@taskflow.com" required />
@@ -79,7 +79,7 @@ async function handleLoginSubmit() {
         </form>
 
         <p class="mt-6 text-sm text-slate-400">
-          Não tem uma conta? 
+          Não tem uma conta?
           <router-link to="/register" class="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">Registre-se aqui</router-link>
         </p>
 

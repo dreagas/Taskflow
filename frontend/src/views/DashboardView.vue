@@ -25,7 +25,7 @@ function formatCurrency(value) {
 
 <template>
   <div class="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
-    
+
     <!-- Background elements for Glassmorphism base -->
     <div class="fixed inset-0 z-0 pointer-events-none">
         <img src="/images/backgrounds/img_homepage.jpg" alt="Background" class="w-full h-full object-cover opacity-10 dark:opacity-20 mix-blend-overlay" @error="$event.target.style.display='none'" />
@@ -34,13 +34,13 @@ function formatCurrency(value) {
     </div>
 
     <AppSidebar class="z-10" />
-    
+
     <div class="flex-1 flex flex-col z-10 w-full overflow-hidden">
         <AppHeader />
-        
+
         <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 md:p-8">
             <div class="max-w-7xl mx-auto space-y-8">
-                
+
                 <div>
                     <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Visão Geral</h1>
                     <p class="text-slate-500 dark:text-slate-400 mt-1">Acompanhe as métricas principais do seu negócio.</p>
@@ -48,27 +48,27 @@ function formatCurrency(value) {
 
                 <!-- Metrics Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <MetricCard 
-                        title="Total de Clientes" 
-                        :value="serviceOrderStore.dashboardMetrics?.totalClients || 0" 
+                    <MetricCard
+                        title="Total de Clientes"
+                        :value="serviceOrderStore.dashboardMetrics?.totalClients || 0"
                         icon="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                         colorClass="from-blue-500 to-indigo-600"
                     />
-                    <MetricCard 
-                        title="Ordens Totais" 
-                        :value="serviceOrderStore.dashboardMetrics?.totalOrders || 0" 
+                    <MetricCard
+                        title="Ordens Totais"
+                        :value="serviceOrderStore.dashboardMetrics?.totalOrders || 0"
                         icon="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
                         colorClass="from-indigo-500 to-purple-600"
                     />
-                    <MetricCard 
-                        title="Pendentes" 
-                        :value="serviceOrderStore.dashboardMetrics?.pendingOrders || 0" 
+                    <MetricCard
+                        title="Pendentes"
+                        :value="serviceOrderStore.dashboardMetrics?.pendingOrders || 0"
                         icon="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                         colorClass="from-amber-400 to-orange-500"
                     />
-                    <MetricCard 
-                        title="Receita (Concluídas)" 
-                        :value="formatCurrency(serviceOrderStore.dashboardMetrics?.totalRevenue)" 
+                    <MetricCard
+                        title="Receita (Concluídas)"
+                        :value="formatCurrency(serviceOrderStore.dashboardMetrics?.totalRevenue)"
                         icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                         colorClass="from-emerald-400 to-teal-500"
                     />
@@ -80,7 +80,7 @@ function formatCurrency(value) {
                         <h2 class="text-lg font-bold text-slate-800 dark:text-white">Ordens de Serviço Recentes</h2>
                         <router-link to="/service-orders" class="text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">Ver todas</router-link>
                     </div>
-                    
+
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>

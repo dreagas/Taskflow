@@ -6,14 +6,14 @@ function formatTimestamp() {
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     const seconds = String(date.getSeconds()).padStart(2, '0');
-    
-    return \`\${year}-\${month}-\${day} \${hours}:\${minutes}:\${seconds}\`;
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 function logSystemEvent(context, message, level = 'INFO') {
     const timestamp = formatTimestamp();
-    const formattedMessage = \`[\${level}] [\${timestamp}] [\${context}]: \${message}\`;
-    
+    const formattedMessage = `[${level}] [${timestamp}] [${context}]: ${message}`;
+
     if (level === 'ERROR') {
         console.error(formattedMessage);
     } else if (level === 'WARN') {

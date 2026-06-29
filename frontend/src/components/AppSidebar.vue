@@ -31,17 +31,17 @@ function isCurrentRouteActive(path) {
 
     <div class="flex-1 overflow-y-auto py-6 px-4">
         <nav class="space-y-2">
-            <router-link 
-                v-for="link in navigationLinks" 
-                :key="link.path" 
+            <router-link
+                v-for="link in navigationLinks"
+                :key="link.path"
                 :to="link.path"
                 class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group"
-                :class="isCurrentRouteActive(link.path) 
-                    ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 shadow-sm border border-indigo-100 dark:border-indigo-800/50' 
+                :class="isCurrentRouteActive(link.path)
+                    ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 shadow-sm border border-indigo-100 dark:border-indigo-800/50'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-800/50 hover:text-indigo-600 dark:hover:text-indigo-400'"
             >
-                <svg class="w-5 h-5 transition-transform duration-300 group-hover:scale-110" 
-                     :class="isCurrentRouteActive(link.path) ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-indigo-500'" 
+                <svg class="w-5 h-5 transition-transform duration-300 group-hover:scale-110"
+                     :class="isCurrentRouteActive(link.path) ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-indigo-500'"
                      fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="link.icon"></path>
                 </svg>
@@ -49,7 +49,7 @@ function isCurrentRouteActive(path) {
             </router-link>
         </nav>
     </div>
-    
+
     <div class="p-4 border-t border-white/20 dark:border-slate-700/30">
         <div class="glass-card p-4 rounded-xl text-center shadow-inner">
             <p class="text-xs text-slate-500 font-medium">TaskFlow OS v1.0</p>

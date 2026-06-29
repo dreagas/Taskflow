@@ -11,9 +11,9 @@ function showToast(msg, toastType = 'info', duration = 3000) {
     message.value = msg;
     type.value = toastType;
     isVisible.value = true;
-    
+
     if (timeoutId) clearTimeout(timeoutId);
-    
+
     timeoutId = setTimeout(() => {
         isVisible.value = false;
     }, duration);
@@ -25,7 +25,7 @@ window.showAppToast = showToast;
 </script>
 
 <template>
-  <Transition 
+  <Transition
     enter-active-class="transform ease-out duration-300 transition"
     enter-from-class="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
     enter-to-class="translate-y-0 opacity-100 sm:translate-x-0"

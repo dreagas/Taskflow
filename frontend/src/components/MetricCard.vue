@@ -14,7 +14,7 @@ const props = defineProps({
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="props.icon"></path>
       </svg>
     </div>
-    
+
     <div>
         <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">{{ props.title }}</p>
         <h3 class="text-2xl font-bold text-slate-800 dark:text-white">{{ props.value }}</h3>

@@ -24,11 +24,11 @@ async function handleCreateClient() {
         window.showAppToast('Nome e E-mail são obrigatórios.', 'error');
         return;
     }
-    
+
     isSubmitting.value = true;
     const result = await clientStore.createNewClient(newClientForm.value);
     isSubmitting.value = false;
-    
+
     if (result.success) {
         window.showAppToast('Cliente cadastrado com sucesso!', 'success');
         showAddModal.value = false;
@@ -51,20 +51,20 @@ async function handleDeleteClient(id) {
 
 <template>
   <div class="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
-    
+
     <div class="fixed inset-0 z-0 pointer-events-none">
         <div class="absolute top-[20%] right-[10%] w-96 h-96 bg-blue-500/10 rounded-full blur-[100px]"></div>
         <div class="absolute bottom-[20%] left-[10%] w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px]"></div>
     </div>
 
     <AppSidebar class="z-10" />
-    
+
     <div class="flex-1 flex flex-col z-10 w-full overflow-hidden">
         <AppHeader />
-        
+
         <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 md:p-8">
             <div class="max-w-7xl mx-auto space-y-6">
-                
+
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Clientes</h1>
@@ -118,7 +118,7 @@ async function handleDeleteClient(id) {
             </div>
         </main>
     </div>
-    
+
     <!-- Add Client Modal -->
     <Transition
         enter-active-class="transition duration-300 ease-out"
@@ -130,7 +130,7 @@ async function handleDeleteClient(id) {
     >
         <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showAddModal = false"></div>
-            
+
             <div class="glass-card w-full max-w-lg relative z-10 p-6 md:p-8 shadow-2xl">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-bold text-slate-800 dark:text-white">Novo Cliente</h2>
@@ -138,7 +138,7 @@ async function handleDeleteClient(id) {
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
-                
+
                 <form @submit.prevent="handleCreateClient" class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome Completo *</label>
@@ -156,7 +156,7 @@ async function handleDeleteClient(id) {
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Endereço</label>
                         <input type="text" v-model="newClientForm.address" class="glass-input w-full px-4 py-2 text-slate-800 dark:text-white" />
                     </div>
-                    
+
                     <div class="pt-4 flex justify-end gap-3 border-t border-slate-200 dark:border-slate-700/50 mt-6">
                         <button type="button" @click="showAddModal = false" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">Cancelar</button>
                         <button type="submit" :disabled="isSubmitting" class="glass-button py-2">{{ isSubmitting ? 'Salvando...' : 'Salvar Cliente' }}</button>

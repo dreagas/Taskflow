@@ -1,9 +1,9 @@
 const express = require('express');
-const { 
-    createServiceOrder, 
-    getAllServiceOrders, 
-    getServiceOrderById, 
-    updateServiceOrder, 
+const {
+    createServiceOrder,
+    getAllServiceOrders,
+    getServiceOrderById,
+    updateServiceOrder,
     deleteServiceOrder,
     getDashboardMetrics
 } = require('../controllers/serviceOrderController');

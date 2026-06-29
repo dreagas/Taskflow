@@ -48,7 +48,7 @@ function initializeDatabaseStructure() {
 
         logSystemEvent('Database', 'Database structure initialized successfully.');
     } catch (error) {
-        logSystemEvent('Database', \`Failed to initialize database structure: \${error.message}\`, 'ERROR');
+        logSystemEvent('Database', `Failed to initialize database structure: ${error.message}`, 'ERROR');
         throw error;
     }
 }
