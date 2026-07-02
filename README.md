@@ -28,17 +28,14 @@ A instalação do projeto é extremamente simples, com configuração automatiza
 2. Acesse a aplicação frontend no seu navegador (geralmente em http://localhost:5173).
 3. O backend roda em http://localhost:3000.
 
-## Guia do Designer: Imagens e Fundos
+## Guia do Designer: Mapeamento de Imagens e Fundos
 
-Para personalizar o visual da aplicação e substituir as imagens de fundo provisórias, acesse o diretório:
+Para personalizar o visual da aplicação e substituir as imagens de fundo provisórias, consulte o arquivo detalhado de mapeamento de assets:
+
+👉 **[Consulte o arquivo `assets_map.md` na raiz do projeto para ver todos os caminhos exatos das imagens e SVGs.](./assets_map.md)**
+
+Nele você encontrará as orientações para os arquivos base localizados em:
 `frontend/public/images/backgrounds/`
-
-Recomendamos as seguintes dimensões para manter a qualidade e o encaixe perfeito com o design *Glassmorphism*:
-
-- `img_login.jpg` (Recomendado: 1920x1080px - Fundo da tela de Login).
-- `img_cadastro.jpg` (Recomendado: 1920x1080px - Fundo da tela de Registro/Cadastro).
-- `img_homepage.jpg` (Recomendado: 1920x1080px - Fundo principal do Dashboard/Home).
-- `img_user_avatar_placeholder.png` (Recomendado: 250x250px - Perfil padrão).
 
 > **Nota:** Caso alguma imagem seja removida ou não carregue, a aplicação possui fallbacks elegantes usando classes de gradientes e efeitos de desfoque (backdrop-blur) implementados com Tailwind CSS.
 

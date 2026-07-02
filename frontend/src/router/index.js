@@ -6,6 +6,7 @@ import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import ClientsView from '../views/ClientsView.vue'
 import ServiceOrdersView from '../views/ServiceOrdersView.vue'
+import CalculatorView from '../views/CalculatorView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,6 +39,12 @@ const router = createRouter({
       path: '/service-orders',
       name: 'service-orders',
       component: ServiceOrdersView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/calculator',
+      name: 'calculator',
+      component: CalculatorView,
       meta: { requiresAuth: true }
     }
   ]
