@@ -75,7 +75,6 @@ export const useServiceOrderStore = defineStore('serviceOrder', () => {
             const data = await response.json();
 
             if (response.ok && data.success === true) {
-                // To keep client_name, we just refetch all for simplicity
                 await fetchAllServiceOrders();
                 fetchDashboardMetrics();
                 return { success: true, serviceOrder: data.serviceOrder };
@@ -97,6 +96,8 @@ export const useServiceOrderStore = defineStore('serviceOrder', () => {
             if (!currentOrder) return { success: false, errorMessage: 'OS não encontrada.' };
 
             const payload = {
+                client_name: currentOrder.client_name,
+                category: currentOrder.category,
                 title: currentOrder.title,
                 description: currentOrder.description,
                 status: newStatus,

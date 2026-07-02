@@ -1,31 +1,37 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useServiceOrderStore } from '../stores/serviceOrderStore';
-import { useClientStore } from '../stores/clientStore';
 import AppHeader from '../components/AppHeader.vue';
 import AppSidebar from '../components/AppSidebar.vue';
 import StatusBadge from '../components/StatusBadge.vue';
 
 const serviceOrderStore = useServiceOrderStore();
-const clientStore = useClientStore();
 
 const showAddModal = ref(false);
-const newOrderForm = ref({ client_id: '', title: '', description: '', amount: 0 });
+const newOrderForm = ref({ client_name: '', category: '', title: '', description: '', amount: 0 });
 const isSubmitting = ref(false);
+
+const orderCategories = [
+    'Manutenção',
+    'Troca',
+    'Garantia',
+    'Instalação',
+    'Suporte Técnico',
+    'Outros'
+];
 
 onMounted(async () => {
     await serviceOrderStore.fetchAllServiceOrders();
-    await clientStore.fetchAllClients();
 });
 
 function openAddModal() {
-    newOrderForm.value = { client_id: '', title: '', description: '', amount: 0 };
+    newOrderForm.value = { client_name: '', category: '', title: '', description: '', amount: 0 };
     showAddModal.value = true;
 }
 
 async function handleCreateOrder() {
-    if (!newOrderForm.value.client_id || !newOrderForm.value.title) {
-        window.showAppToast('Cliente e Título são obrigatórios.', 'error');
+    if (!newOrderForm.value.client_name || !newOrderForm.value.category || !newOrderForm.value.title) {
+        window.showAppToast('Nome do cliente, Categoria e Título são obrigatórios.', 'error');
         return;
     }
 
@@ -90,7 +96,7 @@ function formatCurrency(value) {
                                 <tr class="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200/50 dark:border-slate-700/50 text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">
                                     <th class="p-4 pl-6">ID / Data</th>
                                     <th class="p-4">Cliente</th>
-                                    <th class="p-4">Serviço</th>
+                                    <th class="p-4">Serviço / Categoria</th>
                                     <th class="p-4 text-center">Status</th>
                                     <th class="p-4 pr-6 text-right">Valor</th>
                                 </tr>
@@ -110,7 +116,7 @@ function formatCurrency(value) {
                                     <td class="p-4 font-medium text-slate-700 dark:text-slate-300">{{ order.client_name }}</td>
                                     <td class="p-4">
                                         <div class="text-sm font-medium text-slate-800 dark:text-slate-200">{{ order.title }}</div>
-                                        <div class="text-xs text-slate-500 line-clamp-1 max-w-xs">{{ order.description || 'Sem descrição' }}</div>
+                                        <div class="text-xs text-indigo-500 dark:text-indigo-400 font-medium mt-0.5">{{ order.category }}</div>
                                     </td>
                                     <td class="p-4 text-center cursor-pointer" @click="updateStatus(order.id, order.status)" title="Clique para avançar status">
                                         <StatusBadge :status="order.status" class="hover:ring-2 hover:ring-indigo-500/30 transition-all" />
@@ -148,21 +154,25 @@ function formatCurrency(value) {
 
                 <form @submit.prevent="handleCreateOrder" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Cliente *</label>
-                        <select v-model="newOrderForm.client_id" class="glass-input w-full px-4 py-2 text-slate-800 dark:text-white" required>
-                            <option value="" disabled>Selecione um cliente...</option>
-                            <option v-for="client in clientStore.clients" :key="client.id" :value="client.id">
-                                {{ client.name }}
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome do Cliente *</label>
+                        <input type="text" v-model="newOrderForm.client_name" class="glass-input w-full px-4 py-2 text-slate-800 dark:text-white" placeholder="Ex: João da Silva" required />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Categoria *</label>
+                        <select v-model="newOrderForm.category" class="glass-input w-full px-4 py-2 text-slate-800 dark:text-white" required>
+                            <option value="" disabled>Selecione uma categoria...</option>
+                            <option v-for="category in orderCategories" :key="category" :value="category">
+                                {{ category }}
                             </option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Título do Serviço *</label>
-                        <input type="text" v-model="newOrderForm.title" class="glass-input w-full px-4 py-2 text-slate-800 dark:text-white" placeholder="Ex: Manutenção de Equipamento" required />
+                        <input type="text" v-model="newOrderForm.title" class="glass-input w-full px-4 py-2 text-slate-800 dark:text-white" placeholder="Ex: Formatação de Computador" required />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descrição</label>
-                        <textarea v-model="newOrderForm.description" rows="3" class="glass-input w-full px-4 py-2 text-slate-800 dark:text-white"></textarea>
+                        <textarea v-model="newOrderForm.description" rows="2" class="glass-input w-full px-4 py-2 text-slate-800 dark:text-white"></textarea>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Valor (R$)</label>

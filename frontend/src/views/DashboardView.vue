@@ -87,7 +87,7 @@ function formatCurrency(value) {
                                 <tr class="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200/50 dark:border-slate-700/50 text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">
                                     <th class="p-4 pl-6">ID</th>
                                     <th class="p-4">Cliente</th>
-                                    <th class="p-4">Serviço</th>
+                                    <th class="p-4">Serviço / Categoria</th>
                                     <th class="p-4">Status</th>
                                     <th class="p-4 pr-6 text-right">Valor</th>
                                 </tr>
@@ -102,7 +102,10 @@ function formatCurrency(value) {
                                 <tr v-for="order in recentOrders" :key="order.id" class="hover:bg-white/40 dark:hover:bg-slate-800/40 transition-colors duration-200 group">
                                     <td class="p-4 pl-6 font-medium text-slate-900 dark:text-slate-100">#{{ order.id }}</td>
                                     <td class="p-4 text-slate-600 dark:text-slate-300">{{ order.client_name }}</td>
-                                    <td class="p-4 text-slate-600 dark:text-slate-300 font-medium">{{ order.title }}</td>
+                                    <td class="p-4">
+                                        <div class="text-slate-600 dark:text-slate-300 font-medium">{{ order.title }}</div>
+                                        <div class="text-xs text-indigo-500 dark:text-indigo-400 font-medium mt-0.5">{{ order.category }}</div>
+                                    </td>
                                     <td class="p-4"><StatusBadge :status="order.status" /></td>
                                     <td class="p-4 pr-6 text-right font-semibold text-slate-700 dark:text-slate-200">{{ formatCurrency(order.amount) }}</td>
                                 </tr>

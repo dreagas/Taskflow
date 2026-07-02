@@ -87,12 +87,17 @@ function deleteClient(req, res) {
      try {
         const clientId = req.params.id;
 
-        const checkOrdersStatement = db.prepare('SELECT count(*) as count FROM service_orders WHERE client_id = ?');
-        const orderCount = checkOrdersStatement.get(clientId).count;
+        // We removed the foreign key relationship. But to maintain the behavior for the client management view:
+        const clientNameCheck = db.prepare('SELECT name FROM clients WHERE id = ?').get(clientId);
 
-        if (orderCount > 0) {
-             logSystemEvent('clientController -> deleteClient', `Cannot delete client ${clientId} because they have associated service orders.`, 'WARN');
-             return res.status(400).json({ success: false, errorMessage: 'Cannot delete client. They have associated service orders.' });
+        if (clientNameCheck) {
+            const checkOrdersStatement = db.prepare('SELECT count(*) as count FROM service_orders WHERE client_name = ?');
+            const orderCount = checkOrdersStatement.get(clientNameCheck.name).count;
+
+            if (orderCount > 0) {
+                 logSystemEvent('clientController -> deleteClient', `Cannot delete client ${clientId} because they have associated service orders matching their name.`, 'WARN');
+                 return res.status(400).json({ success: false, errorMessage: 'Cannot delete client. They have associated service orders.' });
+            }
         }
 
         const deleteClientStatement = db.prepare('DELETE FROM clients WHERE id = ?');

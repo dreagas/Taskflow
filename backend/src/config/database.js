@@ -20,7 +20,7 @@ function initializeDatabaseStructure() {
             )
         `);
 
-        // Create Clients table
+        // Create Clients table (Kept for potential future use or independence, but decoupled from orders)
         db.exec(`
             CREATE TABLE IF NOT EXISTS clients (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,13 +36,13 @@ function initializeDatabaseStructure() {
         db.exec(`
             CREATE TABLE IF NOT EXISTS service_orders (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                client_id INTEGER NOT NULL,
+                client_name TEXT NOT NULL,
+                category TEXT NOT NULL,
                 title TEXT NOT NULL,
                 description TEXT,
                 status TEXT DEFAULT 'pending',
                 amount REAL DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(client_id) REFERENCES clients(id)
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         `);
 

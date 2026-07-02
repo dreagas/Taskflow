@@ -3,27 +3,18 @@ const { logSystemEvent } = require('../utils/loggerUtil');
 
 function createServiceOrder(req, res) {
     try {
-        const { client_id, title, description, status, amount } = req.body;
+        const { client_name, category, title, description, status, amount } = req.body;
 
-        if (!client_id || !title) {
-            logSystemEvent('serviceOrderController -> createServiceOrder', 'Missing required fields: client_id and title', 'ERROR');
-            return res.status(400).json({ success: false, errorMessage: 'Missing required fields: Client ID and Title are required.' });
-        }
-
-        // Verify if client exists
-        const checkClientStatement = db.prepare('SELECT id FROM clients WHERE id = ?');
-        const client = checkClientStatement.get(client_id);
-
-        if (!client) {
-             logSystemEvent('serviceOrderController -> createServiceOrder', `Client not found: ID ${client_id}`, 'WARN');
-             return res.status(404).json({ success: false, errorMessage: 'Associated client not found.' });
+        if (!client_name || !category || !title) {
+            logSystemEvent('serviceOrderController -> createServiceOrder', 'Missing required fields: client_name, category, and title', 'ERROR');
+            return res.status(400).json({ success: false, errorMessage: 'Missing required fields: Client Name, Category, and Title are required.' });
         }
 
         const orderStatus = status || 'pending';
         const orderAmount = amount || 0;
 
-        const insertOrderStatement = db.prepare('INSERT INTO service_orders (client_id, title, description, status, amount) VALUES (?, ?, ?, ?, ?)');
-        const result = insertOrderStatement.run(client_id, title, description || null, orderStatus, orderAmount);
+        const insertOrderStatement = db.prepare('INSERT INTO service_orders (client_name, category, title, description, status, amount) VALUES (?, ?, ?, ?, ?, ?)');
+        const result = insertOrderStatement.run(client_name, category, title, description || null, orderStatus, orderAmount);
 
         logSystemEvent('serviceOrderController -> createServiceOrder', `Service order created successfully: ID ${result.lastInsertRowid}`);
 
@@ -39,12 +30,9 @@ function createServiceOrder(req, res) {
 function getAllServiceOrders(req, res) {
     try {
         const getAllOrdersStatement = db.prepare(`
-            SELECT
-                so.*,
-                c.name as client_name
-            FROM service_orders so
-            JOIN clients c ON so.client_id = c.id
-            ORDER BY so.created_at DESC
+            SELECT *
+            FROM service_orders
+            ORDER BY created_at DESC
         `);
         const orders = getAllOrdersStatement.all();
 
@@ -59,14 +47,9 @@ function getServiceOrderById(req, res) {
     try {
         const orderId = req.params.id;
         const getOrderStatement = db.prepare(`
-            SELECT
-                so.*,
-                c.name as client_name,
-                c.email as client_email,
-                c.phone as client_phone
-            FROM service_orders so
-            JOIN clients c ON so.client_id = c.id
-            WHERE so.id = ?
+            SELECT *
+            FROM service_orders
+            WHERE id = ?
         `);
         const order = getOrderStatement.get(orderId);
 
@@ -85,15 +68,26 @@ function getServiceOrderById(req, res) {
 function updateServiceOrder(req, res) {
     try {
         const orderId = req.params.id;
-        const { title, description, status, amount } = req.body;
+        const { client_name, category, title, description, status, amount } = req.body;
 
         if (!title || !status) {
             logSystemEvent('serviceOrderController -> updateServiceOrder', 'Missing required fields: title and status', 'ERROR');
             return res.status(400).json({ success: false, errorMessage: 'Missing required fields: Title and Status are required.' });
         }
 
-        const updateOrderStatement = db.prepare('UPDATE service_orders SET title = ?, description = ?, status = ?, amount = ? WHERE id = ?');
-        const result = updateOrderStatement.run(title, description || null, status, amount || 0, orderId);
+        // Allow updates to client_name and category as well to maintain flexibility
+        let currentOrder = db.prepare('SELECT client_name, category FROM service_orders WHERE id = ?').get(orderId);
+
+        if (!currentOrder) {
+             logSystemEvent('serviceOrderController -> updateServiceOrder', `Service order not found for update: ID ${orderId}`, 'WARN');
+             return res.status(404).json({ success: false, errorMessage: 'Service order not found.' });
+        }
+
+        const updateClientName = client_name || currentOrder.client_name;
+        const updateCategory = category || currentOrder.category;
+
+        const updateOrderStatement = db.prepare('UPDATE service_orders SET client_name = ?, category = ?, title = ?, description = ?, status = ?, amount = ? WHERE id = ?');
+        const result = updateOrderStatement.run(updateClientName, updateCategory, title, description || null, status, amount || 0, orderId);
 
         if (result.changes === 0) {
              logSystemEvent('serviceOrderController -> updateServiceOrder', `Service order not found for update: ID ${orderId}`, 'WARN');
