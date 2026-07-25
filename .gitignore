@@ -1,0 +1,4 @@
+node_modules/
+taskflow-os/node_modules/
+.env
+database.sqlite
