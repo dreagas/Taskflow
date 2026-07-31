@@ -26,6 +26,17 @@ app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/service-orders', serviceOrderRoutes);
 
+// Serve static frontend files in production
+const path = require('path');
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+
+    // Serve index.html for all other routes to support Vue Router history mode
+    app.get('*', (req, res) => {
+        res.sendFile(path.resolve(__dirname, '../../frontend/dist', 'index.html'));
+    });
+}
+
 // Global Error Handler
 app.use((err, req, res, next) => {
     logSystemEvent('Server Error Handler', `Unhandled error: ${err.stack}`, 'ERROR');

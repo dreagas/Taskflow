@@ -1,0 +1,62 @@
+
+> taskflow-os-monorepo@1.0.0 dev
+> concurrently "npm run dev:backend" "npm run dev:frontend"
+
+[1]
+[1] > taskflow-os-monorepo@1.0.0 dev:frontend
+[1] > cd frontend && npm run dev
+[1]
+[0]
+[0] > taskflow-os-monorepo@1.0.0 dev:backend
+[0] > cd backend && npm run dev
+[0]
+[1]
+[1] > frontend@0.0.0 dev
+[1] > vite
+[1]
+[0]
+[0] > taskflow-backend@1.0.0 dev
+[0] > nodemon src/server.js
+[0]
+[0] [33m[nodemon] 3.1.14[39m
+[0] [33m[nodemon] to restart at any time, enter `rs`[39m
+[0] [33m[nodemon] watching path(s): *.*[39m
+[0] [33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[0] [32m[nodemon] starting `node src/server.js`[39m
+[0] [INFO] [2026-07-31 01:34:13] [Database]: Initializing database structure...
+[0] [INFO] [2026-07-31 01:34:13] [Database]: CREATE TABLE IF NOT EXISTS users (
+[0]                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+[0]                 name TEXT NOT NULL,
+[0]                 email TEXT NOT NULL UNIQUE,
+[0]                 password TEXT NOT NULL,
+[0]                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+[0]             )
+[0]
+[0] [INFO] [2026-07-31 01:34:13] [Database]: CREATE TABLE IF NOT EXISTS clients (
+[0]                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+[0]                 name TEXT NOT NULL,
+[0]                 email TEXT NOT NULL,
+[0]                 phone TEXT,
+[0]                 address TEXT,
+[0]                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+[0]             )
+[0]
+[0] [INFO] [2026-07-31 01:34:13] [Database]: CREATE TABLE IF NOT EXISTS service_orders (
+[0]                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+[0]                 client_name TEXT NOT NULL,
+[0]                 category TEXT NOT NULL,
+[0]                 title TEXT NOT NULL,
+[0]                 description TEXT,
+[0]                 status TEXT DEFAULT 'pending',
+[0]                 amount REAL DEFAULT 0,
+[0]                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+[0]             )
+[0]
+[0] [INFO] [2026-07-31 01:34:13] [Database]: Database structure initialized successfully.
+[0] [INFO] [2026-07-31 01:34:13] [Server]: TaskFlow Backend running on port 3000
+[1]
+[1]   VITE v8.1.5  ready in 616 ms
+[1]
+[1]   ➜  Local:   http://localhost:5173/
+[1]   ➜  Network: use --host to expose
+[1] npm run dev:frontend exited with code 143

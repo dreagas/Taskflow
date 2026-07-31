@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useAuthStore } from './authStore';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = '/api'; // Changed for deployment to use relative path
 
 export const useClientStore = defineStore('client', () => {
     const clients = ref([]);

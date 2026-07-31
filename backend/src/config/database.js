@@ -2,7 +2,9 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const { logSystemEvent } = require('../utils/loggerUtil');
 
-const dbPath = path.resolve(__dirname, '../../database.sqlite');
+const dbPath = process.env.NODE_ENV === 'production'
+    ? path.resolve(__dirname, '../../data/database.sqlite') // Persisted volume path for Fly.io
+    : path.resolve(__dirname, '../../database.sqlite');
 const db = new Database(dbPath, { verbose: (message) => logSystemEvent('Database', message) });
 
 function initializeDatabaseStructure() {

@@ -1,0 +1,21 @@
+app = "taskflow-os"
+primary_region = "gru" # São Paulo, Brazil. You can change this to another region like 'iad' (Virginia)
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3000"
+  NODE_ENV = "production"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[mounts]
+  source = "taskflow_data"
+  destination = "/app/backend/data"
